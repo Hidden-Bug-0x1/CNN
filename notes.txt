@@ -1,0 +1,47 @@
+/*
+procedure SwapRowsWith0Pivot (input/output
+M: matrix, output singular: boolean)
+DICTIONARY
+ n, i, j, k: integer
+ temp: infotype
+ALGORITHM
+ n ← NRow(M)
+ singular ← false
+ i ← 1
+ { Search for 0 pivots }
+ while ((i ≤ n) and not(singular)) do
+    if (M[i][i] = 0) then
+        j ← 1
+        { Search for swappable rows }
+        while ((j < n) and (M[j][i] = 0)) do
+            j ← j + 1
+        if (M[j][i] ≠ 0) then { Swap rows }
+            k traversal [1..n]
+            temp ← M[i][k]
+            M[i][k] ← M[j][k]
+            M[j][k] ← -temp
+        else
+            singular ← true
+*/
+
+
+/*
+DETERMINATE ALGORITHM:
+
+SwapRowsWith0Pivot(M,singular)
+if (singular) then { Singular matrix }
+det ← 0
+else { Nonsingular matrix }
+n ← NRow(M)
+pivot ← 1
+k traversal [1..(n-1)] { Traverse pivots }
+    i traversal [(k+1)..n] { Traverse rows }
+        j traversal [(k+1)..n] {Traverse columns}
+            { Apply formula }
+            M[i][j] ← M[k][k] * M[i][j] –
+            M[i][k] * M[k][j]
+            M[i][j] ← M[i][j]/pivot
+    pivot ← M[k][k] { Set next pivot }
+det ← M[n][n] { Assign determinant }
+→ det
+*/
