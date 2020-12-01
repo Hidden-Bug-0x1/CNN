@@ -3,8 +3,12 @@
 #include <vector>
 #include "helper_funcs.cpp"
 
-#define STORAGE_TYPE long double
-#define OVERFLOW_PROTECTION 13
+#ifndef STORAGE_TYPE
+    #define STORAGE_TYPE long double
+#endif
+#ifndef OVERFLOW_PROTECTION
+    #define OVERFLOW_PROTECTION 13
+#endif
 
 class Matrix {
 private:
@@ -23,7 +27,8 @@ public:
     Matrix* copy(); // copy this matrix into a new one
     void random(u_int32_t); // randomize data from 1 to the value passed into Matrix.random
     Matrix& operator= (Matrix&); // assignment operator implementation
-    static Matrix* from_array (STORAGE_TYPE*[], u_int32_t, u_int32_t); // initialize the data array from an array 
+    static Matrix* from_array (STORAGE_TYPE*[], u_int32_t, u_int32_t); // initialize the data array from an array
+    static Matrix* from_vector (std::vector<std::vector<STORAGE_TYPE>>); // initialize the data from a vector 
     ~Matrix (); // Free memory holding data array
     Matrix& operator+ (Matrix&); // add a matrix to this one
     Matrix& operator- (Matrix&); // subtract a matrix from this one
@@ -105,6 +110,22 @@ Matrix* Matrix::from_array (STORAGE_TYPE* arr[], u_int32_t rows, u_int32_t cols)
     return mat;
 }  
 
+// initialize the data from a vector 
+Matrix* Matrix::from_vector (std::vector<std::vector<STORAGE_TYPE>> arr)
+{
+    int rows = arr.size();
+    int cols = arr[0].size();
+    Matrix* mat = new Matrix(rows, cols);
+    for (int row = 0; row < mat->rows; row++)
+    {
+        for (int col = 0; col < mat->cols; col++)
+        {
+            (*mat)[row][col] = arr[row][col];
+        }
+    }
+    return mat;
+}
+
 // Free memory holding data array
 Matrix::~Matrix ()
 {
@@ -161,16 +182,16 @@ Matrix& Matrix::operator* (STORAGE_TYPE scalar)
         }
     }
     // Correct any computer bit errors (bc working with big/small numbers)
-    for (int row = 0; row < rows; row++)
-    {
-        for (int col = 0; col < cols; col++) 
-        {
-            if ((*this).data[row][col] <= (1.0/pow(10, OVERFLOW_PROTECTION)))
-            {
-                (*this).data[row][col] = 0;
-            }
-        }
-    }
+    // for (int row = 0; row < rows; row++)
+    // {
+    //     for (int col = 0; col < cols; col++) 
+    //     {
+    //         if ((*this).data[row][col] <= (1.0/pow(10, OVERFLOW_PROTECTION)))
+    //         {
+    //             (*this).data[row][col] = 0;
+    //         }
+    //     }
+    // }
 
     return *this; // allows chaining of operations
 } 
@@ -178,7 +199,7 @@ Matrix& Matrix::operator* (STORAGE_TYPE scalar)
 // dot product stored in new matrix
 Matrix& Matrix::operator* (Matrix& mat)
 {
-    if (! (rows == mat.cols && cols == mat.rows) )
+    if (! (cols == mat.rows) )
         throw "Improper sizes for dot product";
     
     Matrix* out = new Matrix(rows, mat.cols);
@@ -196,16 +217,16 @@ Matrix& Matrix::operator* (Matrix& mat)
     }
 
     // Correct any computer bit errors (bc working with big/small numbers)
-    for (int row = 0; row < rows; row++)
-    {
-        for (int col = 0; col < cols; col++) 
-        {
-            if ((*out).data[row][col] <= (1.0/pow(10, OVERFLOW_PROTECTION)))
-            {
-                (*out).data[row][col] = 0;
-            }
-        }
-    }
+    // for (int row = 0; row < rows; row++)
+    // {
+    //     for (int col = 0; col < cols; col++) 
+    //     {
+    //         if ((*out).data[row][col] <= (1.0/pow(10, OVERFLOW_PROTECTION)))
+    //         {
+    //             (*out).data[row][col] = 0;
+    //         }
+    //     }
+    // }
 
     return *out;
 } 
@@ -213,7 +234,7 @@ Matrix& Matrix::operator* (Matrix& mat)
 // dot product stored in new matrix
 Matrix& Matrix::operator* (Matrix* mat)
 {
-    if (! (rows == mat->cols && cols == mat->rows) )
+    if (! (cols == mat->rows) )
         throw "Improper sizes for dot product";
     
     Matrix* out = new Matrix(rows, mat->cols);
@@ -230,16 +251,16 @@ Matrix& Matrix::operator* (Matrix* mat)
         }
     }
     // Correct any computer bit errors (bc working with big/small numbers)
-    for (int row = 0; row < rows; row++)
-    {
-        for (int col = 0; col < cols; col++) 
-        {
-            if ((*out).data[row][col] <= (1.0/pow(10, OVERFLOW_PROTECTION)))
-            {
-                (*out).data[row][col] = 0;
-            }
-        }
-    }
+    // for (int row = 0; row < rows; row++)
+    // {
+    //     for (int col = 0; col < cols; col++) 
+    //     {
+    //         if ((*out).data[row][col] <= (1.0/pow(10, OVERFLOW_PROTECTION)))
+    //         {
+    //             (*out).data[row][col] = 0;
+    //         }
+    //     }
+    // }
 
     return *out;
 } 
@@ -274,11 +295,12 @@ void Matrix::print()
 {
     for (std::vector<STORAGE_TYPE> row : data) 
     {
+        std::cout << "[ ";
         for (STORAGE_TYPE value : row)
         {
-            std::cout << value << ' ';
+            std::cout << value << (value==row[row.size()-1]  ? "":", ");
         }
-        std::cout << std::endl;
+        std::cout << "]" << std::endl;
     }
     std::cout << std::endl;
 }
@@ -376,7 +398,7 @@ Matrix& Matrix::inverse()
         STORAGE_TYPE scale = data[target_row_ind][col];
         (*this).row_divide(target_row_ind, scale);
         (*out).row_divide(target_row_ind, scale);
-        for (int row = 0; row < rows; row++) 
+        for (int row = 0; row < rows; row++)  
         {
             STORAGE_TYPE target = (STORAGE_TYPE)( col == row );
             if (target == 1)
@@ -385,12 +407,15 @@ Matrix& Matrix::inverse()
             } else if (target == 0)
             {
                 STORAGE_TYPE scale = data[row][col];
-                (*this).row_mult(target_row_ind, scale);
-                (*this).row_sub(row, target_row_ind);
-                (*this).row_divide(target_row_ind, scale);
-                (*out).row_mult(target_row_ind, scale);
-                (*out).row_sub(row, target_row_ind);
-                (*out).row_divide(target_row_ind, scale);
+                if (scale != 0)
+                {
+                    (*this).row_mult(target_row_ind, scale);
+                    (*this).row_sub(row, target_row_ind);
+                    (*this).row_divide(target_row_ind, scale);
+                    (*out).row_mult(target_row_ind, scale);
+                    (*out).row_sub(row, target_row_ind);
+                    (*out).row_divide(target_row_ind, scale);
+                }
 
             }
         }
